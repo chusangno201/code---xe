@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Xe tình yêu - Responsive Mobile</title>
 
     <style>
         @import url("https://fonts.googleapis.com/css?family=Muli");
@@ -2113,11 +2113,155 @@
             top: -2px;
             vertical-align: middle;
         }
+
+
+        /* =========================================================
+           RESPONSIVE CHO ĐIỆN THOẠI / TABLET
+           Giữ nguyên kích thước thiết kế gốc 800 x 620 và tự co bằng JS.
+        ========================================================== */
+        :root {
+            --scene-scale: 1;
+            --design-width: 800;
+            --design-height: 620;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-width: 100%;
+            min-height: 100%;
+        }
+
+        body {
+            height: 100vh;
+            height: 100svh;
+            height: 100dvh;
+            padding:
+                max(10px, env(safe-area-inset-top))
+                max(10px, env(safe-area-inset-right))
+                max(10px, env(safe-area-inset-bottom))
+                max(10px, env(safe-area-inset-left));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: manipulation;
+        }
+
+        .scene-viewport {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            isolation: isolate;
+        }
+
+        .scene-frame {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 800px;
+            height: 620px;
+            transform: translate(-50%, -50%);
+            transform-origin: center;
+        }
+
+        .stage {
+            width: 800px;
+            height: 620px;
+            min-height: 0;
+            margin: 0;
+            transform: scale(var(--scene-scale));
+            transform-origin: top left;
+            will-change: transform;
+        }
+
+        /* Giúp animation mượt hơn trên điện thoại */
+        .vehicle-body,
+        .vehicle-body .wrap-body,
+        .tree,
+        .ground-line div,
+        .wheel-wrap .wheel .wheel-outer,
+        .love-wrap {
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+        }
+
+        @media (max-width: 767px) {
+            body {
+                padding:
+                    max(8px, env(safe-area-inset-top))
+                    max(8px, env(safe-area-inset-right))
+                    max(8px, env(safe-area-inset-bottom))
+                    max(8px, env(safe-area-inset-left));
+            }
+
+            /* Trên mobile cho xe xuất hiện lớn hơn và chạy gọn trong vùng nhìn */
+            .vehicle-body {
+                animation-name: runMobile;
+                animation-duration: 6s;
+                animation-timing-function: ease-in-out;
+                animation-iteration-count: infinite;
+            }
+
+            @keyframes runMobile {
+                0% {
+                    right: 5%;
+                    transform: translateZ(0) rotate(0deg);
+                }
+
+                18% {
+                    right: 18%;
+                    transform: translateZ(0) rotate(0deg);
+                }
+
+                36% {
+                    right: 32%;
+                    transform: translateZ(0) rotate(0deg);
+                }
+
+                48% {
+                    right: 40%;
+                    transform: translateZ(0) rotate(-8deg);
+                }
+
+                58% {
+                    right: 30%;
+                    transform: translateZ(0) rotate(-20deg);
+                }
+
+                70%,
+                100% {
+                    right: -115%;
+                    transform: translateZ(0) rotate(-20deg);
+                }
+            }
+        }
+
+        @media (max-height: 430px) and (orientation: landscape) {
+            body {
+                padding-top: 4px;
+                padding-bottom: 4px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+            }
+        }
+
     </style>
 </head>
 
 <body>
-    <div class='stage'>
+    <main class='scene-viewport' aria-label='Hoạt cảnh xe tình yêu'>
+        <div class='scene-frame'>
+            <div class='stage'>
         <div class='ground-line'>
             <div>
                 <span class='line1'></span>
@@ -2399,6 +2543,52 @@
         </div>
     </div>
 
+
+
+        </div>
+    </main>
+
+    <script>
+        (() => {
+            const DESIGN_WIDTH = 800;
+            const DESIGN_HEIGHT = 620;
+            const MOBILE_FOCUS_WIDTH = 600;
+
+            const viewport = document.querySelector('.scene-viewport');
+            const frame = document.querySelector('.scene-frame');
+            const stage = document.querySelector('.stage');
+
+            if (!viewport || !frame || !stage) return;
+
+            const resizeScene = () => {
+                const availableWidth = viewport.clientWidth;
+                const availableHeight = viewport.clientHeight;
+                const isMobile = availableWidth <= 767;
+
+                // Mobile dùng vùng nhìn 600px để chiếc xe lớn và dễ nhìn hơn.
+                // Hai mép cảnh nền có thể được cắt nhẹ, nhưng xe không bị méo.
+                const focusWidth = isMobile ? MOBILE_FOCUS_WIDTH : DESIGN_WIDTH;
+                const widthScale = availableWidth / focusWidth;
+                const heightScale = availableHeight / DESIGN_HEIGHT;
+                const scale = Math.min(widthScale, heightScale, 1);
+
+                document.documentElement.style.setProperty('--scene-scale', scale.toFixed(4));
+                frame.style.width = `${DESIGN_WIDTH * scale}px`;
+                frame.style.height = `${DESIGN_HEIGHT * scale}px`;
+
+                // Canh cảnh hơi thấp hơn một chút trên màn hình dọc để tự nhiên hơn.
+                frame.style.top = isMobile && availableHeight > availableWidth ? '54%' : '50%';
+            };
+
+            resizeScene();
+            window.addEventListener('resize', resizeScene, { passive: true });
+            window.addEventListener('orientationchange', resizeScene, { passive: true });
+
+            if ('ResizeObserver' in window) {
+                new ResizeObserver(resizeScene).observe(viewport);
+            }
+        })();
+    </script>
 
 </body>
 
